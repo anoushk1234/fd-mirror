@@ -67,7 +67,6 @@ struct sigaction sa = {
   .sa_handler = signal1
 };
 
-/*TODO: use ncurses blocking input on sep thread to avoid blocking monitor*/
 void*
 handle_input( void *arguments ){
   thread_args *args_p = arguments;
@@ -76,11 +75,6 @@ handle_input( void *arguments ){
   ncinput key;
 
   for(;;){
-  if( FD_UNLIKELY( NULL==nc ) ){
-    FD_LOG_WARNING(( "nc NULL" ));
-    sleep(2);
-    continue;
-  }
   notcurses_get_blocking( nc, &key );
   if( FD_UNLIKELY( '\t'==key.id ) ){
      app->app_state.page_number = (int)next_page( app );;
@@ -97,7 +91,6 @@ poll_metrics( void *arguments ){
 
   fd_topo_t const * topo = args_p->topo;
   fd_top_t * app = args_p->app;
-  /*struct notcurses *nc = args_p->nc;*/
 
   ulong start = get_unix_timestamp_ms();
   for(;;){
@@ -129,33 +122,13 @@ poll_metrics( void *arguments ){
   return NULL;
 }
 
-struct termios terminal_backup;
 
-/*void*/
-/*restore_terminal( ){*/
-/*  (void)tcsetattr( STDIN_FILENO, TCSANOW, &terminal_backup );*/
-/*}*/
-/**/
 void*
 draw_monitor( void *arguments ){
 
   thread_args *args_p = arguments;
   fd_top_t *app = args_p->app;
   struct notcurses *nc = args_p->nc;
-
-
-  /*args_p->nc = nc;*/
-  /*(void)restore_terminal;*/
-/*if( FD_UNLIKELY( 0!=tcgetattr( STDIN_FILENO, &terminal_backup ) ) ) {*/
-/*    FD_LOG_ERR(( "tcgetattr(STDIN_FILENO) failed (%i-%s)", errno, fd_io_strerror( errno ) ));*/
-/*  }*/
-/**/
-  /* Disable character echo and line buffering */
-/*  struct termios term = terminal_backup;*/
-/*  term.c_lflag &= (tcflag_t)~(ICANON | ECHO);*/
-/*  if( FD_UNLIKELY( 0!=tcsetattr( STDIN_FILENO, TCSANOW, &term ) ) ) {*/
-/*    FD_LOG_WARNING(( "tcsetattr(STDIN_FILENO) failed (%i-%s)", errno, fd_io_strerror( errno ) ));*/
-/*  }*/
 
   
   unsigned dimx, dimy;
@@ -166,13 +139,8 @@ draw_monitor( void *arguments ){
   
   for(;;){
    fdtop_menu_create( nc, app );
-  /*hud_create(nc);*/
-  /*char ts = (char)(app->bank.txn_success + 30);*/
-  /*handle_input( nc, app );*/
-  /*char ts[1024];*/
-  /*sprintf( ts, "%lu\n", app->bank.txn_success );*/
-    /*FD_LOG_ERR(( "%s", ts ));*/
-  /*hud_schedule( ts,0); */
+
+
    notcurses_render( nc );
 }
    notcurses_stop( nc );

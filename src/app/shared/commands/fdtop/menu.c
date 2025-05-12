@@ -78,12 +78,54 @@ fdtop_menu_create( struct notcurses* nc, fd_top_t *app ){
 
   fdtop_menu_refresh( zero_plane, ylen, xlen );
   fdtop_menu_bar_create( zero_plane, xlen, app->app_state.page_number );
+  if(show_logo < 3){
+    return 0;
+  }
+  struct ncvisual* ncv;
+  switch (app->app_state.page_number) {
+case 0:
+
+  ncv = ncvisual_from_file( "src/car1.jpg" );
+       break;
+case 1:
+
+  ncv = ncvisual_from_file( "src/car2.jpg" );
+       break;
+case 2:
+
+  ncv = ncvisual_from_file( "src/car2.jpg" );
+  break;
+
+  }
+  if( NULL==ncv ){
+      FD_LOG_WARNING(( "ncvisual_from_file failed" ));
+    /*return -1;*/
+  }
+
+  unsigned pdimy, pdimx;
+  ncplane_pixel_geom( zero_plane, NULL, NULL, &pdimy, &pdimx, NULL, NULL );
+  if( FD_UNLIKELY( ncvisual_resize( ncv,  (int)(pdimy * 2), (int)(pdimx * 4) ) ) ){
+    ncvisual_destroy( ncv );
+    /*return -1;*/
+  }
+  
+  struct ncvisual_options vopts = {
+  .n = zero_plane,
+  .y = 4,
+  .x = NCALIGN_CENTER,
+  .blitter = NCBLIT_PIXEL,
+  .scaling = NCSCALE_NONE,
+  .flags = NCVISUAL_OPTION_CHILDPLANE,
+   };
+  /*struct notcurses* nc = ncplane_notcurses(  );*/
+  ncvisual_blit( nc, ncv, &vopts );
+  ncvisual_destroy( ncv );
   return 0; 
 }
 #include <wchar.h>
 int fdtop_menu_bar_create( struct ncplane *zero_plane , unsigned xlen, int page_number ){
   struct ncplane *one_plane = ncplane_dup( zero_plane, NULL );
-  /*ncplane_erase( one_plane );*/
+  ncplane_erase( one_plane );
   unsigned int oldy, oldx;
   ncplane_dim_yx( one_plane, &oldy, &oldx );
   ncplane_resize_simple( one_plane, 4, oldx );
@@ -138,11 +180,15 @@ int fdtop_menu_bar_create( struct ncplane *zero_plane , unsigned xlen, int page_
    * Temporary shenanigans to display some kind of loading logo purely for
    * aesthetic reasons.
    * */
-  if( 0==show_logo ){
+  if( 2==show_logo ){
     time_t start = get_unix_timestamp_s();
-    while( get_unix_timestamp_s() - start < 1 ){
+    while( get_unix_timestamp_s() - start < 5 ){
      continue;
     }
+    show_logo++;
+    return 0;
+  }
+  if(show_logo > 2){
     return 0;
   }
   struct ncvisual* ncv = ncvisual_from_file( "src/disco/gui/dist/assets/firedancer-D_J0EzUc.svg" );
@@ -159,7 +205,7 @@ int fdtop_menu_bar_create( struct ncplane *zero_plane , unsigned xlen, int page_
   }
   
   struct ncvisual_options vopts = {
-  .n = zero_plane,
+  .n = one_plane,
   .y = NCALIGN_CENTER,
   .x = NCALIGN_CENTER,
   .blitter = NCBLIT_PIXEL,
@@ -171,6 +217,6 @@ int fdtop_menu_bar_create( struct ncplane *zero_plane , unsigned xlen, int page_
 
 
   ncvisual_destroy( ncv );
-  show_logo = 0;
+  show_logo = 2;
   return 0;
 }
