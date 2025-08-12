@@ -16,7 +16,7 @@ jobs:
       EXTRAS: no-agave
       AGAVE_VERSION: v2.0.3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
 
